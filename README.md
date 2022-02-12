@@ -1,7 +1,7 @@
 # MDL-network-population-clustering
 
 <ins>Inputs</ins> \
-D: list of sets. the s-th set contains all the edges (i,j) in the s-th network in the sample (does not include the other direction (j,i)). order only matters for contiguous clustering \
+D: list of sets. the s-th set contains all the edges (i,j) in the s-th network in the sample (does not include the other direction (j,i)). the order of edgesets within D only matters for contiguous clustering, where we want the edgesets to be in order of the samples in time \
 N: number of nodes in each network \
 K0: initial number of clusters (for discontiguous clustering, usually K0 = 1 works well) \
 n_fails: number of failed reassign/merge/split/merge-split moves before terminating algorithm \
