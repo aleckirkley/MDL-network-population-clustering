@@ -7,7 +7,7 @@ K0: initial number of clusters (for discontiguous clustering, usually K0 = 1 wor
 n_fails: number of failed reassign/merge/split/merge-split moves before terminating algorithm 
 
 <ins>Outputs</ins> \
-C: dictionary with items (cluster label):(set of indices corresponding to networks in cluster) \ 
+C: dictionary with items (cluster label):(set of indices corresponding to networks in cluster) \  
 E: dictionary with items (cluster label):(edge count dictionary). edge count dictionary is a dictionary with items (edge (i,j)):(number of times edge (i.j) occurs in cluster) \
 A: dictionary with items (cluster label):(set of edges corresponding to mode of cluster) \
 L: inverse compression ratio (description length after clustering)/(description length of naive transmission) 
