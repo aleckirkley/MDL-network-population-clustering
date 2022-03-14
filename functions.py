@@ -1,6 +1,7 @@
 from collections import Counter
 import numpy as np
 from scipy.special import loggamma
+import random
 
 def generate_synthetic(S,N,modes,alphas,betas,pis):
     """
