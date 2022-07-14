@@ -52,7 +52,7 @@ class MDL_populations():
     MDL population clustering class
     
     Inputs:
-    edgesets: list of sets. the s-th set contains all the edges (i,j) in the s-th network in the sample (does not include the other direction (j,i)). 
+    edgesets: list of sets. the s-th set contains all the edges (i,j) in the s-th network in the sample (do not include the other direction (j,i) if network is undirected). 
         the order of edgesets within D only matters for contiguous clustering, where we want the edgesets to be in order of the samples in time
     N: number of nodes in each network
     K0: initial number of clusters (for discontiguous clustering, usually K0 = 1 works well; for contiguous clustering it doesn't matter)
@@ -66,7 +66,7 @@ class MDL_populations():
     
     """
     
-    def __init__(self, edgesets, N, K0 = 1, n_fails = 100, bipartite = None):
+    def __init__(self, edgesets, N, K0 = 1, n_fails = 100, bipartite = None, directed = False):
         """
         initialize class attributes
         """
@@ -74,12 +74,14 @@ class MDL_populations():
         self.K0 = K0
         self.n_fails = n_fails
         self.S = len(self.edgesets)
-        if bipartite is None:
-            self.N = N
-            self.NC2 = self.N*(self.N-1)/2
+        self.N = N
+        if bipartite is not None:
+            self.NC2 = bipartite[0]*bipartite[1]  #bipartite networks only differentiated from unipartite ones through this 
+        if directed:
+            self.NC2 = self.N*(self.N-1) #directed networks only differentiated from undirected ones through this
         else:
-            self.N = N  
-            self.NC2 = bipartite[0]*bipartite[1]  #bipartite networks only differentiated from unipartite ones through this constant
+            self.NC2 = self.N*(self.N-1)/2
+            constant
         self.C,self.E,self.A = {},{},{}
         self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
     
