@@ -2,6 +2,7 @@ from collections import Counter
 import numpy as np
 from scipy.special import loggamma
 import random
+import time
 
 def generate_synthetic(S,N,modes,alphas,betas,pis):
     """
@@ -58,7 +59,6 @@ class MDL_populations():
     K0: initial number of clusters (for discontiguous clustering, usually K0 = 1 works well; for contiguous clustering it doesn't matter)
     n_fails: number of failed reassign/merge/split/merge-split moves before terminating algorithm
     bipartite: 'None' for unipartite network populations, array [# of nodes of type 1, # of nodes of type 2] otherwise
-    directed: True for directed edge sets
     
     Outputs of 'run_sims' (unconstrained description length optimization) and 'dynamic_contiguous' (restriction to contiguous clusters):
     C: dictionary with items (cluster label):(set of indices corresponding to networks in cluster)
@@ -67,7 +67,7 @@ class MDL_populations():
     
     """
     
-    def __init__(self, edgesets, N, K0 = 1, n_fails = 100, bipartite = None, directed = False):
+    def __init__(self, edgesets, N, K0 = 1, n_fails = 100, bipartite = None, directed = False, max_runs = 10000):
         """
         initialize class attributes
         """
@@ -76,6 +76,7 @@ class MDL_populations():
         self.n_fails = n_fails
         self.S = len(self.edgesets)
         self.N = N
+        self.max_runs = max_runs
         if bipartite is not None:
             self.NC2 = bipartite[0]*bipartite[1]  #bipartite networks only differentiated from unipartite ones through this term
         if directed:
@@ -239,8 +240,8 @@ class MDL_populations():
                 self.C[kpnew] = self.C.pop(kp)
                 self.E[knew] = self.E.pop(k)
                 self.E[kpnew] = self.E.pop(kp)
-                self.A[knew] = self.A.pop(k)
-                self.A[kpnew] = self.A.pop(kp)
+                self.A[knew] = self.update_mode(self.E[knew],len(self.C[knew])) #self.A.pop(k)
+                self.A[kpnew] = self.update_mode(self.E[kpnew],len(self.C[kpnew])) #self.A.pop(kp)
                 self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
                 return True, deltaL1s[min_kp]
             
@@ -505,25 +506,25 @@ class MDL_populations():
         """
         run discontiguous (unconstrained) merge split simulations to identify modes and clusters that minimize the description length
         """
-        nf,max_runs,runs = 0,10000,0
-        while (nf < self.n_fails) and (runs < max_runs):
+        nf,runs = 0,0
+        move_times,move_types = [],[]
+        while (nf < self.n_fails) and (runs < self.max_runs):
             
+            start = time.time()
             move = np.random.choice([1,2,3,4])
             accepted,deltaL = eval('self.move'+str(move)+'()')
             if accepted: nf = 0
             else: nf += 1
             self.L += deltaL
             runs += 1
-
+            move_times.append(time.time()-start)
+            move_types.append(move)
+        
         M = sum([len(D) for D in self.edgesets])
-        ######################
-        ######################
-        ######################
         self.L = sum([self.Lk(self.A[k],self.E[k],len(self.C[k])) for k in self.C])
-        ######################
-        ######################
-        ######################
         self.L /= self.logchoose(self.S*self.NC2,M) #return (minimum description length)/(naive code length transmitting all networks separately)
+        self.move_times = np.array(move_times)
+        self.move_types = np.array(move_types)
     
         return remap_keys(self.C),remap_keys(self.A),self.L
     
@@ -543,6 +544,7 @@ class MDL_populations():
         self.clusters[0] = {key0:set([0])}.copy()
         self.modes[0] = {key0:self.edgesets[0].copy()}.copy()
         
+        start = time.time()
         for j in range(1,self.S):
             
             jkey = self.random_key()
@@ -579,6 +581,7 @@ class MDL_populations():
         self.A = self.modes[self.S-1].copy()
         M = sum([len(D) for D in self.edgesets]) 
         self.L = self.LMDL[self.S-1]/self.logchoose(self.S*self.NC2,M)
+        self.runtime = time.time() - start
         
         return remap_keys(self.C),remap_keys(self.A),self.L 
     
