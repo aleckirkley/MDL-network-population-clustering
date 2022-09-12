@@ -240,6 +240,8 @@ class MDL_populations():
                 self.C[kpnew] = self.C.pop(kp)
                 self.E[knew] = self.E.pop(k)
                 self.E[kpnew] = self.E.pop(kp)
+                self.A[knew] = self.A.pop(k)
+                self.A[kpnew] = self.A.pop(kp)
                 self.A[knew] = self.update_mode(self.E[knew],len(self.C[knew])) #self.A.pop(k)
                 self.A[kpnew] = self.update_mode(self.E[kpnew],len(self.C[kpnew])) #self.A.pop(kp)
                 self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
