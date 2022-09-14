@@ -127,60 +127,45 @@ class MDL_populations():
                 else:
                     Ek[e] = 1             
         return Ek
-    
-    def update_mode_reverse(self,Ek,Sk):
-        """
-        generate mode from cluster edge counts by greedily adding most common edges in cluster to empty mode while description length decreases
-        only used when 'update_mode' terminates immediately
-        """
-        Etil = sorted(Ek.items(),key=lambda x:x[1],reverse=True)
-        r,tk,fk,Mk,Ak = 0,0,sum(Ek.values()),0,set()
-        Mmax = len(Ek)
-        while (r < Mmax): 
-            e,Xij = Etil[r]
-            Lafter = self.logchoose(self.NC2,Mk+1) + Sk*np.log(self.S/Sk) + self.logchoose(Sk*(Mk+1),tk+Xij) \
-                                + self.logchoose(Sk*(self.NC2-(Mk+1)),fk-Xij)
-            Lbefore = self.logchoose(self.NC2,Mk) + Sk*np.log(self.S/Sk) + self.logchoose(Sk*Mk,tk) + self.logchoose(Sk*(self.NC2-Mk),fk)
-            deltaLadd = Lafter - Lbefore
-            if (deltaLadd <= 0):
-                Ak.add(e)
-                r += 1
-                tk += Xij
-                fk -= Xij
-                Mk += 1
-            else:
-                return Ak
-        return Ak
-    
+
     def update_mode(self,Ek,Sk):
         """
         generate mode from cluster edge counts by greedily removing least common edges in cluster from mode of all in-cluster edges 
-            while description length decreases   
         """
+        Ek_vals = set(Ek.values())
+        Acomplete = set(Ek.keys())
+        
+        if (Sk == 1): return Acomplete # return network itself if cluster only has one network
+        elif not(Ek): return set() # return empty mode if networks in cluster are empty
+        elif (len(Ek_vals) == 1) and (next(iter(Ek_vals)) > 1): return Acomplete # return network itself if networks are all duplicates
+        
         Etil = sorted(Ek.items(),key=lambda x:x[1])
-        r,tk,fk,Mk,Ak = 0,sum(Ek.values()),0,len(Ek),set(Ek.keys())
+        r,tk,fk,Mk,Ak = 0,sum(Ek.values()),0,len(Ek),Acomplete.copy()
         Mmax = len(Ek)
+        best_mode,deltaL,deltaL_best = 0,0,0
         while (r < Mmax): 
             
             e,Xij = Etil[r]
             Lafter = self.logchoose(self.NC2,Mk-1) + Sk*np.log(self.S/Sk) + self.logchoose(Sk*(Mk-1),tk-Xij) \
                         + self.logchoose(Sk*(self.NC2-(Mk-1)),fk+Xij)
             Lbefore = self.logchoose(self.NC2,Mk) + Sk*np.log(self.S/Sk) + self.logchoose(Sk*Mk,tk) + self.logchoose(Sk*(self.NC2-Mk),fk)
-            deltaLadd = Lafter - Lbefore
-            
-            if (deltaLadd <= 0):
+
+            Ak.discard(e)
+            r += 1
+            tk -= Xij
+            fk += Xij
+            Mk -= 1
                 
-                Ak.discard(e)
-                r += 1
-                tk -= Xij
-                fk += Xij
-                Mk -= 1
-                
-            else:
-                if r == 0:
-                    return self.update_mode_reverse(Ek,Sk)
-                return Ak
-            
+            deltaL += (Lafter - Lbefore)
+            if deltaL < deltaL_best:
+                deltaL_best = deltaL
+                best_mode = r
+        
+        Ak = Acomplete.copy()
+        for r in range(best_mode): 
+            e,Xij = Etil[r]
+            Ak.discard(e)
+        
         return Ak
             
     def Lk(self,Ak,Ek,Sk):
@@ -196,14 +181,16 @@ class MDL_populations():
                 fk -= Ek[e]
         return self.logchoose(self.NC2,Mk) + Sk*np.log(self.S/Sk) + self.logchoose(Sk*Mk,tk) + self.logchoose(Sk*(self.NC2-Mk),fk)
             
-    def move1(self):
+    def move1(self,k=None):
         """
         move type 1: reassign randomly chosen network to best cluster
         """
         ks = list(self.C.keys())
-        k = random.choice(ks)
-        if len(self.C[k]) == 1: return self.move2() #try merge move if only one network in cluster
-        if len(self.C) == 1: return self.move3() #try splitting if only one cluster
+        if k is None:
+            k = random.choice(ks)
+            
+        if len(self.C) == 1: 
+            return self.move3() #try splitting if only one cluster
         else:
             
             s = np.random.choice(list(self.C[k]))
@@ -242,9 +229,12 @@ class MDL_populations():
                 self.E[kpnew] = self.E.pop(kp)
                 self.A[knew] = self.A.pop(k)
                 self.A[kpnew] = self.A.pop(kp)
-                self.A[knew] = self.update_mode(self.E[knew],len(self.C[knew])) #self.A.pop(k)
-                self.A[kpnew] = self.update_mode(self.E[kpnew],len(self.C[kpnew])) #self.A.pop(kp)
-                self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
+                self.A[knew] = self.update_mode(self.E[knew],len(self.C[knew]))
+                self.A[kpnew] = self.update_mode(self.E[kpnew],len(self.C[kpnew])) 
+                if not(self.C[knew]):
+                    del self.C[knew]
+                    del self.A[knew]
+                    del self.E[knew]
                 return True, deltaL1s[min_kp]
             
             else:
@@ -254,7 +244,8 @@ class MDL_populations():
         """
         move type 2: merge two randomly chosen clusters
         """
-        if len(self.C) == 1: return self.move3() #try splitting if only one cluster
+        if len(self.C) == 1: #try splitting if only one cluster
+            return self.move3() 
         ks = list(self.C.keys())
         kp,kpp = np.random.choice(ks,size=2,replace=False)
         
@@ -283,7 +274,6 @@ class MDL_populations():
             self.A[k] = Ak.copy()
             del self.A[kp]
             del self.A[kpp]
-            self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
             return True, deltaL2   
         
         else:
@@ -297,8 +287,8 @@ class MDL_populations():
         ks = list(self.C.keys())
         k = random.choice(ks)
         
-        if len(self.C[k]) == 1: 
-            return self.move2() #if only one network in cluster, try a merge move
+        if len(self.C[k]) == 1: #if only one network in cluster, try move 1 with this cluster
+            return self.move1(k) 
         
         if k in self.attsplits: #if split already tried and failed, exit
             return False,0
@@ -391,11 +381,10 @@ class MDL_populations():
             self.A[kp] = localA[0].copy()
             self.A[kpp] = localA[1].copy()
             del self.A[k]
-            self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
             return True,deltaL3 
         
         else:
-            self.attmerges.add(k)
+            self.attsplits.add(k)
             return False, 0
         
     def move4(self):
@@ -497,7 +486,6 @@ class MDL_populations():
             self.A[kpp] = localA[1].copy()
             del self.A[k1]
             del self.A[k2]
-            self.attmerges,self.attsplits,self.attmergesplits = set(),set(),set()
             return True,deltaL4 
         
         else:
