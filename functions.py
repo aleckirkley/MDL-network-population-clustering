@@ -59,6 +59,8 @@ class MDL_populations():
     K0: initial number of clusters (for discontiguous clustering, usually K0 = 1 works well; for contiguous clustering it doesn't matter)
     n_fails: number of failed reassign/merge/split/merge-split moves before terminating algorithm
     bipartite: 'None' for unipartite network populations, array [# of nodes of type 1, # of nodes of type 2] otherwise
+    directed: boolean indicating whether edgesets contain directed edges
+    max_runs: maximum number of allowed moves, regardless of number of fails
     
     Outputs of 'run_sims' (unconstrained description length optimization) and 'dynamic_contiguous' (restriction to contiguous clusters):
     C: dictionary with items (cluster label):(set of indices corresponding to networks in cluster)
@@ -67,7 +69,7 @@ class MDL_populations():
     
     """
     
-    def __init__(self, edgesets, N, K0 = 1, n_fails = 100, bipartite = None, directed = False, max_runs = 10000):
+    def __init__(self, edgesets, N, K0 = 1, n_fails = 100, bipartite = None, directed = False, max_runs = np.inf):
         """
         initialize class attributes
         """
