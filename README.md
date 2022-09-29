@@ -23,3 +23,9 @@ C,A,L = MDLobj.run_sims()
 **For contiguous clustering, use:** \
 MDLobj = MDL_populations(edgesets,N,K0=(anything),n_fails=(anything),bipartite,directed) \
 C,A,L = MDLobj.dynamic_contiguous() 
+
+If you use this algorithm please cite:
+
+A. Kirkley, A. Rojas, M. Rosvall, and J-G. Young, Compressing network populations with modal
+networks reveals structural diversity. Preprint arXiv:2209.13827 (2022).
+
