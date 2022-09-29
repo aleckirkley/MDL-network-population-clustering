@@ -8,6 +8,7 @@
 **n_fails:** number of failed reassign/merge/split/merge-split moves before terminating algorithm \
 **bipartite:** 'None' for unipartite network populations, array [# of nodes of type 1, # of nodes of type 2] otherwise \
 **directed:** Set to True when sets of edges input are directed 
+**max_runs:** Maximum number of allowed moves, independent of number of failed moves
 
 **Outputs of 'run_sims' (unconstrained description length optimization) and 'dynamic_contiguous' (restriction to contiguous clusters):** \
 **C:** dictionary with items (cluster label):(set of indices corresponding to networks in cluster) \
@@ -15,7 +16,7 @@
 **L:** inverse compression ratio (description length after clustering)/(description length of naive transmission) 
 
 **For discontiguous clustering, use:** \
-MDLobj = MDL_populations(edgesets,N,K0,n_fails,bipartite,directed) \
+MDLobj = MDL_populations(edgesets,N,K0,n_fails,bipartite,directed,max_runs) \
 MDLobj.initialize_clusters() \
 C,A,L = MDLobj.run_sims() 
 
