@@ -27,5 +27,5 @@ C,A,L = MDLobj.dynamic_contiguous()
 If you use this algorithm please cite:
 
 A. Kirkley, A. Rojas, M. Rosvall, and J-G. Young, Compressing network populations with modal
-networks reveals structural diversity. Preprint arXiv:2209.13827 (2022).
+networks reveals structural diversity. Communications Physics 6, 148 (2023).
 
